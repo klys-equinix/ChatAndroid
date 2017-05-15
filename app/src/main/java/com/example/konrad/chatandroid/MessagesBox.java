@@ -30,12 +30,12 @@ public class MessagesBox extends AppCompatActivity {
     TextView messageField;
     CommunicationService myService;
     boolean isBound=false;
-
+    //Handler ClientHandler = Client.getInstance().getClientHandler();
     Handler myHandler = new Handler(Looper.getMainLooper()) {
     @Override
     public void handleMessage(Message newMessage) {
         ChatMessage message = (ChatMessage) newMessage.obj;
-
+        write(message.getMessage());
     }
     };
     @Override
@@ -51,6 +51,8 @@ public class MessagesBox extends AppCompatActivity {
         sendButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
+                   ChatMessage newMsg = new ChatMessage(ChatMessage.MESSAGE,messageField.getText().toString(),"Konrad",receiverField.getText().toString());
+                    myService.passToClient(newMsg);
             }
         });
     }

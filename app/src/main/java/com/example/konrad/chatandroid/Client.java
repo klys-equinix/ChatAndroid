@@ -4,7 +4,9 @@ package com.example.konrad.chatandroid;
  * Created by Konrad on 14.05.2017.
  */
 
+import android.content.Intent;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.widget.Toast;
 
@@ -14,32 +16,31 @@ import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
 
-class Client {
-    private static final Client ourInstance = new Client();
+class Client extends Thread{
     private String server = "10.0.2.2";
-    //private String server = "185.5.98.242";
-    private String usrName;
+    //private String server = "localhost";
+    public String usrName;
     private int port=1500;
+    private byte[] password;
     private Socket socket;
     private ObjectOutputStream obOut;
     private ObjectInputStream obIn;
 
     private Handler myHandler;
-    static Client getInstance() {
-        return ourInstance;
-    }
 
-    private Client(){}
-    public boolean start(byte[] password, String usrName,Handler myHandler){
+    public Client(byte[] password, String usrName,Handler myHandler){
         this.myHandler = myHandler;
         this.usrName=usrName;
+        this.password = password;
+    }
+    public void run(){
         try{
             socket = new Socket(server,port);
         }catch(IOException ex){
 
 
             sendToHandler(new ChatMessage(ChatMessage.ERROR,"Connection cannot be established"+ex,this.usrName));
-            return false;
+            return ;
         }
         String msg = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort();
         sendToHandler(new ChatMessage(ChatMessage.REGISTER,msg,this.usrName));
@@ -51,7 +52,7 @@ class Client {
 
         }catch(IOException ex){
             System.out.println("Cannot establish IO streams"+ex);
-            return false;
+            return;
         }
         new Client.ListenFromServer().start();
         try{
@@ -60,11 +61,11 @@ class Client {
         }catch (IOException ex){
             System.out.println("Error logging in"+ex);
             disconnect();
-            return false;
+            return ;
         }
-        return true;
+        return;
     }
-    void sendMessage(ChatMessage message){
+    void broadcastMessage(ChatMessage message){
         try{
             obOut.writeObject(message);
         }catch(IOException ex){
@@ -104,12 +105,30 @@ class Client {
             }
         }
     }
+
+    public Handler getClientHandler() {
+        return ClientHandler;
+    }
+
     private void sendToHandler(ChatMessage newMsg){
         Message msg = Message.obtain();
         msg.obj = newMsg;
         msg.setTarget(myHandler);
         msg.sendToTarget();
     }
+    private Handler ClientHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message newMessage) {
+            ChatMessage message = (ChatMessage) newMessage.obj;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    broadcastMessage(message);
+                }
+            }).start();
+
+        }
+    };
 
 }
 

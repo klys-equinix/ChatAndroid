@@ -7,11 +7,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.widget.Toast;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import Chat_Message.ChatMessage;
@@ -23,13 +19,14 @@ import Chat_Message.ChatMessage;
 public class CommunicationService extends Service {
     private final IBinder mBinder = new LocalBinder();
     ArrayList<ChatMessage> received = new ArrayList<>();
-    private Handler sendingHandler;
+    Client currClient;
+    private Handler ActivitySendHandler;
     Handler myHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message newMessage) {
             ChatMessage message = (ChatMessage) newMessage.obj;
             received.add(message);
-            passOn(message);
+            passToActivity(message);
         }
     };
     public class LocalBinder extends Binder {
@@ -48,22 +45,30 @@ public class CommunicationService extends Service {
     }
 
     public void initializeCommunication(byte[] password,String usrName){
-        new Thread(new Runnable() {
+        /*new Thread(new Runnable() {
             @Override
             public void run() {
                 Client.getInstance().start(password,usrName,myHandler);
             }
-        }).start();
-
+        }).start();*/
+        currClient = new Client(password,usrName,myHandler);
+        currClient.start();
     }
-    private void passOn(ChatMessage message){
+
+    private void passToActivity(ChatMessage message){
         Message msg = Message.obtain();
         msg.obj = message;
-        msg.setTarget(sendingHandler);
+        msg.setTarget(ActivitySendHandler);
+        msg.sendToTarget();
+    }
+    public void passToClient(ChatMessage message){
+        Message msg = Message.obtain();
+        msg.obj = message;
+        msg.setTarget(currClient.getClientHandler());
         msg.sendToTarget();
     }
     public void passHandler(Handler newHandler){
-        this.sendingHandler = newHandler;
+        this.ActivitySendHandler = newHandler;
     }
     public ArrayList<ChatMessage> getMessages(){
         return this.received;
