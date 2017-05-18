@@ -5,6 +5,7 @@ package com.example.konrad.chatandroid;
  */
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -65,11 +66,25 @@ class Client extends Thread{
         }
         return;
     }
-    void broadcastMessage(ChatMessage message){
-        try{
-            obOut.writeObject(message);
-        }catch(IOException ex){
-            System.out.println("Cannot send message");
+    private class broadcastTask extends AsyncTask<String,Void,Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            try {
+                String messageText = params[0];
+                String receiver = params[1];
+                ChatMessage message=null;
+                if (messageText.equalsIgnoreCase("LOGOUT")) {
+                    message = new ChatMessage(ChatMessage.LOGOUT, "",usrName);
+                } else if (messageText.equalsIgnoreCase("WHOISIN")) {
+                    message = new ChatMessage(ChatMessage.WHOISIN, "",usrName);
+                } else if(messageText!="") {
+                    message = new ChatMessage(ChatMessage.MESSAGE,messageText,usrName,receiver);
+                }
+                obOut.writeObject(message);
+            } catch (IOException ex) {
+                System.out.println("Cannot send message");
+            }
+            return null;
         }
     }
     public void disconnect(){
@@ -119,14 +134,8 @@ class Client extends Thread{
     private Handler ClientHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message newMessage) {
-            ChatMessage message = (ChatMessage) newMessage.obj;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    broadcastMessage(message);
-                }
-            }).start();
-
+            String[] out = (String[]) newMessage.obj;
+            new broadcastTask().execute(out[0],out[1]);
         }
     };
 

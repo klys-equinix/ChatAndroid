@@ -51,8 +51,8 @@ public class MessagesBox extends AppCompatActivity {
         sendButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                   ChatMessage newMsg = new ChatMessage(ChatMessage.MESSAGE,messageField.getText().toString(),"Konrad",receiverField.getText().toString());
-                    myService.passToClient(newMsg);
+                String[] out = {messageField.getText().toString(),receiverField.getText().toString()};
+                myService.passToClient(out);
             }
         });
     }
@@ -74,7 +74,7 @@ public class MessagesBox extends AppCompatActivity {
 
 
     public void write(String text){
-        deliveredField.setText(text+"\n");
+        deliveredField.setText(deliveredField.getText()+"\n"+text);
     }
     private ServiceConnection myConnection = new ServiceConnection() {
 

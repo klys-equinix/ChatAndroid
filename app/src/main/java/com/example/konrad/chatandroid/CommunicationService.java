@@ -45,12 +45,6 @@ public class CommunicationService extends Service {
     }
 
     public void initializeCommunication(byte[] password,String usrName){
-        /*new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Client.getInstance().start(password,usrName,myHandler);
-            }
-        }).start();*/
         currClient = new Client(password,usrName,myHandler);
         currClient.start();
     }
@@ -61,9 +55,9 @@ public class CommunicationService extends Service {
         msg.setTarget(ActivitySendHandler);
         msg.sendToTarget();
     }
-    public void passToClient(ChatMessage message){
+    public void passToClient(String[] data){
         Message msg = Message.obtain();
-        msg.obj = message;
+        msg.obj = data;
         msg.setTarget(currClient.getClientHandler());
         msg.sendToTarget();
     }
